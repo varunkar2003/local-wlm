@@ -1,0 +1,5 @@
+.venv/
+out/
+export/
+__pycache__/
+*.mp4
