@@ -71,10 +71,17 @@ cam = scene.add_camera(
 scene.build()
 
 
+def to_np(x, dtype=None):
+    """Copy GPU tensors to host before numpy (no-op on the CPU backend)."""
+    if hasattr(x, "detach"):
+        x = x.detach().cpu().numpy()
+    return np.asarray(x, dtype=dtype)
+
+
 def dof_indices(joint_names):
     idx = []
     for name in joint_names:
-        idx.extend(np.atleast_1d(humanoid.get_joint(name).dof_idx_local).tolist())
+        idx.extend(np.atleast_1d(to_np(humanoid.get_joint(name).dof_idx_local)).tolist())
     return idx
 
 
@@ -98,7 +105,7 @@ n_dofs = len(root_dofs) + len(limb_dofs) + len(held_dofs)
 all_dofs = root_dofs + limb_dofs + held_dofs
 zero_vel = np.zeros(n_dofs)
 
-root0 = np.array(humanoid.get_dofs_position(root_dofs))
+root0 = to_np(humanoid.get_dofs_position(root_dofs))
 
 GLIDE_SPEED = 0.15          # m/s forward
 KICK_HZ = 1.4               # flutter-kick frequency

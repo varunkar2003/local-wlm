@@ -77,10 +77,18 @@ cam = scene.add_camera(
 scene.build()
 
 
+def to_np(x, dtype=None):
+    """Genesis returns torch tensors that live on the GPU under the cuda backend;
+    copy to host before handing to numpy (a no-op on the CPU backend)."""
+    if hasattr(x, "detach"):  # torch tensor
+        x = x.detach().cpu().numpy()
+    return np.asarray(x, dtype=dtype)
+
+
 def dof_indices(joint_names):
     idx = []
     for name in joint_names:
-        idx.extend(np.atleast_1d(robot.get_joint(name).dof_idx_local).tolist())
+        idx.extend(np.atleast_1d(to_np(robot.get_joint(name).dof_idx_local)).tolist())
     return idx
 
 
@@ -104,7 +112,7 @@ held_zeros = np.zeros(len(held_dofs))
 all_dofs = root_dofs + limb_dofs + held_dofs
 zero_vel = np.zeros(len(all_dofs))
 
-root0 = np.array(robot.get_dofs_position(root_dofs))
+root0 = to_np(robot.get_dofs_position(root_dofs))
 
 GLIDE_SPEED = 0.18
 KICK_HZ = 1.8
@@ -159,10 +167,10 @@ for frame in range(n_frames):
         scene.step()
         t += DT
     if args.export:
-        particles = np.asarray(water.get_particles_pos(), dtype=np.float32)
+        particles = to_np(water.get_particles_pos(), dtype=np.float32)
         np.save(f"{args.export}/water/frame_{frame:04d}.npy", particles)
-        traj_pos.append(np.asarray(robot.get_links_pos()))
-        traj_quat.append(np.asarray(robot.get_links_quat()))
+        traj_pos.append(to_np(robot.get_links_pos()))
+        traj_quat.append(to_np(robot.get_links_quat()))
     else:
         cam.render()
 
